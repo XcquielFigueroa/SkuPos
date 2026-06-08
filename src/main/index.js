@@ -1,13 +1,26 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import { initProductosIpc } from './ipc/productsIpc'
+import { initPrintersIpc } from './ipc/printersIpc'
+import { initBarcodeReaderIpc } from './ipc/barcodeReaderIpc'
+
+// NOTAS PERSONALES Y APUNTES
+// Este archivo vendría a ser como el script principal para electron o el sistema detrás del navegador/interfaz de electron
+// En este script es donde se crean las funciones que necesitan de recursos o dispositivos del sistema. React no tiene acceso a eso directamente.
+// Para usarlas y hacerlas llegar a React hay que comunicarlas a través de IPC
+// Usamos ipcMain.Handle(función) para crear la función a ejecutar y exponerla al render en preload/index.js
+// Devuelven una promesa, por lo que idealmente son async.
+
+let mainWindow
 
 function createWindow() {
+  // Crea la ventana principal de la aplicación
   // Create the browser window.
-  const mainWindow = new BrowserWindow({
-    width: 900,
-    height: 670,
+  mainWindow = new BrowserWindow({
+    width: 1920,
+    height: 1080,
     show: false,
     autoHideMenuBar: true,
     ...(process.platform === 'linux' ? { icon } : {}),
@@ -17,17 +30,20 @@ function createWindow() {
     }
   })
 
+  // Muestra la pantalla una vez han cargado los elementos de lo contrario se vería en blanco y luego cargaría los elementos
+  // Llamamos a initBarcodeReaderIpc aca para evitar entregar mainWindow como nulo
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
+    initBarcodeReaderIpc(mainWindow)
   })
 
+  // Evita que los links dentro de la aplicación se abran como un navegador, para permitirlo colocar 'allow' en vez de 'deny'
   mainWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
     return { action: 'deny' }
   })
 
-  // HMR for renderer base on electron-vite cli.
-  // Load the remote URL for development or the local html file for production.
+  // Conecta al servidor de vite cuando está en modo producción, una vez compilada se conecta al archivo directamente
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
@@ -35,53 +51,26 @@ function createWindow() {
   }
 }
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
+// Llamamos a las funciones para inicializar los handles
 app.whenReady().then(() => {
-  // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron')
+  initProductosIpc()
+  initPrintersIpc()
 
-  // Default open or close DevTools by F12 in development
-  // and ignore CommandOrControl + R in production.
-  // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
   })
 
-  // IPC test
-  ipcMain.on('ping', () => console.log('pong'))
-
   createWindow()
 
   app.on('activate', function () {
-    // On macOS it's common to re-create a window in the app when the
-    // dock icon is clicked and there are no other windows open.
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
 })
 
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
+// Termina el programa al cerrar la ventana en windows
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()
   }
-})
-
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and require them here.
-
-ipcMain.handle('obtener-impresoras', async (event) => {
-    const webContents = event.sender
-
-    try {
-        const impresoras = await webContents.getPrintersAsync()
-        return impresoras
-    } catch (error)
-    {
-        console.error("Error al leer impresoras", error)
-        return []
-    }
 })

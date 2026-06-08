@@ -1,13 +1,12 @@
-import ComponentePrueba from "./components/ComponentePrueba"
-
+import PanelProductos from './components/PanelProductos'
+import ComponentePrueba from './components/ComponentePrueba'
 
 function App() {
-  const ipcHandle = () => window.electron.ipcRenderer.send('ping')
-
   return (
-    <>
+    <div className="bg-gray-200">
       <ComponentePrueba></ComponentePrueba>
-    </>
+      <PanelProductos></PanelProductos>
+    </div>
   )
 }
 
