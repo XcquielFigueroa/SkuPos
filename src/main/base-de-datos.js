@@ -17,7 +17,8 @@ db.exec(`
     codigo_barras TEXT UNIQUE NOT NULL,
     nombre TEXT NOT NULL,
     precio REAL NOT NULL,
-    stock INTEGER DEFAULT 0
+    stock INTEGER DEFAULT 0,
+    imagen_referencial TEXT
   );
   
   CREATE TABLE IF NOT EXISTS ventas (

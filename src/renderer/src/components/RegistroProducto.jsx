@@ -8,6 +8,7 @@ export default function RegistroProducto({ esActivo }) {
   const [nuevoNombre, setNuevoNombre] = useState('')
   const [nuevoPrecio, setNuevoPrecio] = useState('')
   const [nuevoCodigo, setNuevoCodigo] = useState('')
+  const [nuevaImagen, setNuevaImagen] = useState(null)
 
   const agregarProductoMutation = useMutation({
     mutationFn: (nuevoProducto) => window.api.insertarProducto(nuevoProducto),
@@ -18,6 +19,7 @@ export default function RegistroProducto({ esActivo }) {
         setNuevoNombre('')
         setNuevoPrecio('')
         setNuevoCodigo('')
+        setNuevaImagen(null)
       } else {
         alert('Error al guardar producto: ' + resultado.error)
       }
@@ -37,13 +39,27 @@ export default function RegistroProducto({ esActivo }) {
     }
   }, [esActivo])
 
-  const handleCrearProducto = (e) => {
+  const handleCrearProducto = async (e) => {
     e.preventDefault()
+
+    let datosImagen = null
+
+    if (nuevaImagen && nuevaImagen.length > 0) {
+      const archivo = nuevaImagen[0]
+      const arrayBuffer = await archivo.arrayBuffer()
+
+      datosImagen = {
+        nombreOriginal: archivo.name,
+        buffer: new Uint8Array(arrayBuffer)
+      }
+    }
+
     agregarProductoMutation.mutate({
       codigo_barras: nuevoCodigo,
       nombre: nuevoNombre,
       precio: parseFloat(nuevoPrecio),
-      stock: 10
+      stock: 10,
+      imagen: datosImagen
     })
   }
 
@@ -79,6 +95,15 @@ export default function RegistroProducto({ esActivo }) {
             required
             className="pl-3 pr-3 py-2 border border-gray-300 rounded text-sm text-gray-700 placeholder-gray-400 outline-none focus:border-emerald-600 transition w-full"
           />
+          <label className="flex flex-col gap-1 cursor-pointer">
+            <span className="text-xs font-semibold text-gray-500">Imagen de referencia</span>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setNuevaImagen(e.target.files)}
+              className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
+            />
+          </label>
           <button
             type="submit"
             className="flex gap-2 items-center justify-center bg-emerald-600 text-white p-2 rounded text-sm font-medium hover:bg-emerald-700 transition disabled:opacity-50 disabled:cursor-not-allowed"

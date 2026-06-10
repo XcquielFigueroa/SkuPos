@@ -62,8 +62,27 @@ export default function BuscarProducto({ esActivo }) {
           )}
           {!isLoading && producto && (
             <div className="flex-col w-full justify-center bg-white border border-gray-200 p-4 rounded text-sm text-gray-700">
-              <div className="w-20 h-20 border border-gray-200 bg-gray-50 flex items-center justify-center text-xs text-gray-400 rounded mb-2 mx-auto">
-                imagen
+              <div className="w-24 h-24 border border-gray-200 bg-gray-50 flex items-center justify-center rounded-lg mb-3 mx-auto overflow-hidden shadow-sm">
+                {producto.imagen_referencial && producto.imagen_referencial !== 'null' ? (
+                  <img
+                    src={`app-img://${producto.imagen_referencial}`}
+                    alt={producto.nombre}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.target.style.display = 'none'
+                      const container = e.target.closest('div')
+                      if (container) {
+                        container.innerHTML =
+                          "<span class='text-[10px] text-red-500 text-center font-medium p-1'>Foto no encontrada</span>"
+                      }
+                    }}
+                  />
+                ) : (
+                  <div className="flex flex-col items-center justify-center text-[11px] text-gray-400 font-medium">
+                    <span className="text-xl mb-1">📦</span>
+                    <span>Sin imagen</span>
+                  </div>
+                )}
               </div>
               <h3 className="text-sm font-semibold text-gray-800 uppercase tracking-wide text-center">
                 {producto.nombre}

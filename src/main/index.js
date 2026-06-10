@@ -1,10 +1,10 @@
-import { app, shell, BrowserWindow } from 'electron'
+import { app, shell, BrowserWindow, protocol, net } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
-import { initProductosIpc } from './ipc/productsIpc'
-import { initPrintersIpc } from './ipc/printersIpc'
-import { initBarcodeReaderIpc } from './ipc/barcodeReaderIpc'
+import { inicializarDirectorio, configurarProtocoloImagenes } from './configurar-carpeta-imagenes'
+import { inicializarProductosIpc } from './ipc/ipc-productos'
+import { inicializarLectorCodigosIpc, inicializarImpresorasIpc } from './ipc/ipc-dispositivos'
 
 // NOTAS PERSONALES Y APUNTES
 // Este archivo vendría a ser como el script principal para electron o el sistema detrás del navegador/interfaz de electron
@@ -14,6 +14,11 @@ import { initBarcodeReaderIpc } from './ipc/barcodeReaderIpc'
 // Devuelven una promesa, por lo que idealmente son async.
 
 let mainWindow
+
+// Registramos nuestro nuevo esquema en los protocolos de confianza con los privilegios de saltarse el Content Security Policy y que permita envio de datos con fetch usando stream: true
+protocol.registerSchemesAsPrivileged([
+  { scheme: 'app-img', privileges: { bypassCSP: true, stream: true } }
+])
 
 function createWindow() {
   // Crea la ventana principal de la aplicación
@@ -34,7 +39,7 @@ function createWindow() {
   // Llamamos a initBarcodeReaderIpc aca para evitar entregar mainWindow como nulo
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
-    initBarcodeReaderIpc(mainWindow)
+    inicializarLectorCodigosIpc(mainWindow)
   })
 
   // Evita que los links dentro de la aplicación se abran como un navegador, para permitirlo colocar 'allow' en vez de 'deny'
@@ -54,8 +59,11 @@ function createWindow() {
 // Llamamos a las funciones para inicializar los handles
 app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.electron')
-  initProductosIpc()
-  initPrintersIpc()
+
+  inicializarDirectorio()
+  configurarProtocoloImagenes(protocol, net)
+  inicializarProductosIpc()
+  inicializarImpresorasIpc()
 
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)

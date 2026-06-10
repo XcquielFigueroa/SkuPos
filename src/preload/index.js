@@ -9,6 +9,7 @@ import { electronAPI } from '@electron-toolkit/preload'
 const api = {
   obtenerImpresoras: () => ipcRenderer.invoke('obtener-impresoras'),
   buscarProducto: (codigo) => ipcRenderer.invoke('db:buscar-producto', codigo),
+  buscarPorNombre: (termino) => ipcRenderer.invoke('db:buscar-productos-por-nombre', termino),
   insertarProducto: (producto) => ipcRenderer.invoke('db:insertar-producto', producto),
   codigoEscaneado: (callback) => {
     const listener = (event, codigo) => callback(codigo)
